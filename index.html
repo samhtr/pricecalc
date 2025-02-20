@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>License Price Calculator</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>License Price Calculator – Co-Term Additional Purchase with Discounts</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -11,15 +11,27 @@
       background-color: #f9f9f9;
     }
     .container {
-      max-width: 500px;
+      max-width: 900px;
       margin: 0 auto;
-      padding: 20px;
       background: #fff;
+      padding: 20px;
       border-radius: 8px;
-      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-    h1 {
+    h1, h2 {
       text-align: center;
+    }
+    .flex-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .calculator-panel, .breakdown-panel {
+      flex: 1 1 400px;
+      box-sizing: border-box;
+    }
+    .section {
+      margin-bottom: 30px;
     }
     label {
       display: block;
@@ -47,123 +59,240 @@
       background-color: #0056b3;
     }
     .license-control input {
-      width: 60px;
+      width: 70px;
       padding: 8px;
       text-align: center;
       font-size: 16px;
       border: 1px solid #ccc;
       border-radius: 4px;
     }
-    .result {
-      margin-top: 20px;
-      padding: 10px;
-      background: #e9ecef;
-      border-radius: 4px;
-      text-align: center;
-      font-size: 18px;
-      font-weight: bold;
-    }
     textarea {
       width: 100%;
-      margin-top: 10px;
       padding: 10px;
       border: 1px solid #ccc;
       border-radius: 4px;
       resize: none;
       font-family: monospace;
     }
+    small {
+      display: block;
+      text-align: center;
+      color: #666;
+      margin-top: 5px;
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Price Calculator</h1>
-    <label for="licenses">Number of Licenses:</label>
-    <div class="license-control">
-      <button onclick="decrement()">−</button>
-      <input type="number" id="licenses" min="2" value="2" oninput="calculatePrice()">
-      <button onclick="increment()">+</button>
+    <h1>License Price Calculator</h1>
+    <div class="flex-container">
+      <!-- Left Panel: Calculator Inputs -->
+      <div class="calculator-panel">
+        <!-- Initial Purchase Section -->
+        <div class="section">
+          <h2>Initial Purchase (Full Year)</h2>
+          <label for="initialLicenses">Initial Licenses (min 2):</label>
+          <div class="license-control">
+            <button onclick="decrementInitial()">−</button>
+            <input type="number" id="initialLicenses" min="2" value="2" oninput="calculateAll()" />
+            <button onclick="incrementInitial()">+</button>
+          </div>
+        </div>
+        
+        <!-- Additional Purchase Section -->
+        <div class="section">
+          <h2>Additional Purchase (Co-Term)</h2>
+          <label for="additionalLicenses">Additional Licenses:</label>
+          <div class="license-control">
+            <button onclick="decrementAdditional()">−</button>
+            <input type="number" id="additionalLicenses" min="0" value="0" oninput="calculateAll()" />
+            <button onclick="incrementAdditional()">+</button>
+          </div>
+          <label for="monthsRemaining">
+            Months remaining until renewal for additional purchase:
+          </label>
+          <center><input type="number" id="monthsRemaining" min="1" max="12" value="6" oninput="calculateAll()" /></center>
+          <small>
+            Enter the number of months remaining in the current term for the additional licenses.
+          </small>
+        </div>
+      </div>
+      
+      <!-- Right Panel: Cost Breakdown -->
+      <div class="breakdown-panel">
+        <h2>Cost Breakdown</h2>
+        <textarea id="breakdown" rows="25" readonly></textarea>
+      </div>
     </div>
-    <div class="result" id="result">Total Price: $5000.00</div>
-    <label for="breakdown">Cost Breakdown:</label>
-    <textarea id="breakdown" rows="10" readonly></textarea>
   </div>
-
+  
   <script>
-    function calculatePrice() {
-      // Get the current number of licenses
-      let numLicenses = parseInt(document.getElementById("licenses").value);
-      if (isNaN(numLicenses) || numLicenses < 2) {
-        document.getElementById("result").innerHTML = "Please enter a valid number (minimum 2 licenses).";
-        document.getElementById("breakdown").value = "";
-        return;
-      }
-      
-      const basePrice = 5000;  // Base package includes 2 licenses
-      let breakdownText = "";
-      breakdownText += "Base Package (2 licenses): $5000\n";
-      
-      // Calculate additional licenses beyond the included 2
-      let extraLicenses = numLicenses - 2;
-      breakdownText += "Additional Licenses: " + extraLicenses + "\n";
-      
-      // Pricing: Every 3 additional licenses cost $2500, remaining licenses are $1000 each
+    // Computes full annual cost details for a given number of licenses (includes the base package).
+    function computeCostBreakdown(totalLicenses) {
+      const basePrice = 5000; // Price for first 2 licenses
+      let extraLicenses = totalLicenses - 2;
       let groupCount = Math.floor(extraLicenses / 3);
       let remainder = extraLicenses % 3;
-      let costGroups = groupCount * 2500;
-      let costRemainder = remainder * 1000;
-      
-      breakdownText += " - Groups of 3 (" + groupCount + " group(s)): $" + costGroups + "\n";
-      breakdownText += " - Remaining licenses (" + remainder + "): $" + costRemainder + "\n";
-      
-      let additionalCost = costGroups + costRemainder;
+      let additionalCost = groupCount * 2500 + remainder * 1000;
       let subtotal = basePrice + additionalCost;
-      breakdownText += "Subtotal before discount: $" + subtotal + "\n";
       
-      // Determine bulk discount percentage based on total licenses
+      // Determine discount percentage based on total licenses
       let discountPercent = 0;
-      if (numLicenses >= 20 && numLicenses <= 39) {
-        discountPercent = 10;
-      } else if (numLicenses >= 40 && numLicenses <= 59) {
-        discountPercent = 15;
-      } else if (numLicenses >= 60 && numLicenses <= 99) {
-        discountPercent = 20;
-      } else if (numLicenses >= 100) {
-        discountPercent = 25;
+      if (totalLicenses >= 20 && totalLicenses <= 39) {
+        discountPercent = 0.10;
+      } else if (totalLicenses >= 40 && totalLicenses <= 59) {
+        discountPercent = 0.15;
+      } else if (totalLicenses >= 60 && totalLicenses <= 99) {
+        discountPercent = 0.20;
+      } else if (totalLicenses >= 100) {
+        discountPercent = 0.25;
       }
       
-      let discountAmount = (discountPercent / 100) * subtotal;
-      if (discountPercent > 0) {
-        breakdownText += "Bulk Discount (" + discountPercent + "%): -$" + discountAmount.toFixed(2) + "\n";
-      } else {
-        breakdownText += "Bulk Discount: None\n";
-      }
-      
+      let discountAmount = discountPercent * subtotal;
       let finalPrice = subtotal - discountAmount;
-      breakdownText += "Final Price: $" + finalPrice.toFixed(2);
       
-      // Update displayed results
-      let formattedPrice = finalPrice.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-      document.getElementById("result").innerHTML = "Total Price: " + formattedPrice;
-      document.getElementById("breakdown").value = breakdownText;
+      return {
+        totalLicenses,
+        basePrice,
+        extraLicenses,
+        groupCount,
+        remainder,
+        additionalCost,
+        subtotal,
+        discountPercent,
+        discountAmount,
+        finalPrice
+      };
     }
     
-    function increment() {
-      let input = document.getElementById("licenses");
+    // Computes full-year cost for additional licenses as a standalone purchase (no base package).
+    // Returns detailed pricing including discount.
+    function computeAdditionalCost(nAdditional, totalLicenses) {
+      let discountRate = 0;
+      if(totalLicenses >= 20 && totalLicenses <= 39) {
+        discountRate = 0.10;
+      } else if(totalLicenses >= 40 && totalLicenses <= 59) {
+        discountRate = 0.15;
+      } else if(totalLicenses >= 60 && totalLicenses <= 99) {
+        discountRate = 0.20;
+      } else if(totalLicenses >= 100) {
+        discountRate = 0.25;
+      }
+      let groups = Math.floor(nAdditional / 3);
+      let remainder = nAdditional % 3;
+      let costWithoutBase = groups * 2500 + remainder * 1000;
+      let discountAmount = costWithoutBase * discountRate;
+      let fullYearCost = costWithoutBase - discountAmount;
+      return {
+        groups,
+        remainder,
+        costWithoutBase,
+        discountRate,
+        discountAmount,
+        fullYearCost
+      };
+    }
+    
+    function calculateAll() {
+      // Retrieve initial licenses (minimum 2)
+      let initialLicenses = parseInt(document.getElementById("initialLicenses").value) || 2;
+      if (initialLicenses < 2) initialLicenses = 2;
+      document.getElementById("initialLicenses").value = initialLicenses;
+      
+      // Retrieve additional licenses (0 or more)
+      let additionalLicenses = parseInt(document.getElementById("additionalLicenses").value) || 0;
+      if (additionalLicenses < 0) additionalLicenses = 0;
+      document.getElementById("additionalLicenses").value = additionalLicenses;
+      
+      // Retrieve months remaining for additional purchase
+      let monthsRemaining = parseInt(document.getElementById("monthsRemaining").value) || 6;
+      if (monthsRemaining < 1 || monthsRemaining > 12) {
+        monthsRemaining = 6;
+        document.getElementById("monthsRemaining").value = 6;
+      }
+      
+      // Total licenses after additional purchase
+      let totalLicenses = initialLicenses + additionalLicenses;
+      
+      // Compute full-year cost breakdown for initial purchase (includes base)
+      let breakdownInitial = computeCostBreakdown(initialLicenses);
+      
+      // Compute full-year cost breakdown for total licenses (for renewal)
+      let breakdownTotal = computeCostBreakdown(totalLicenses);
+      
+      // Compute additional purchase cost details (standalone, no base)
+      let additionalCostObj = computeAdditionalCost(additionalLicenses, totalLicenses);
+      
+      // Co-term additional purchase cost: prorate the additional full-year cost over the months remaining.
+      let additionalPurchaseCost = additionalCostObj.fullYearCost * (monthsRemaining / 12);
+      
+      // Renewal cost is the full annual cost for the total licenses (no credit adjustment).
+      let renewalCostDue = breakdownTotal.finalPrice;
+      
+      // Formatting helpers
+      const fmt = (num) => num.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+      const pct = (n) => (n * 100).toFixed(0) + "%";
+      
+      // Build breakdown text
+      let text = "";
+      text += "=== INITIAL PURCHASE (Full Year) ===\n";
+      text += "Initial Licenses: " + breakdownInitial.totalLicenses + "\n";
+      text += "  • Base Price (2 licenses): " + fmt(breakdownInitial.basePrice) + "\n";
+      text += "  • Additional Licenses: " + breakdownInitial.extraLicenses + "\n";
+      text += "     - " + breakdownInitial.groupCount + " group(s) of 3 @ " + fmt(2500) + "\n";
+      text += "     - " + breakdownInitial.remainder + " license(s) @ " + fmt(1000) + "\n";
+      text += "  • Subtotal: " + fmt(breakdownInitial.subtotal) + "\n";
+      text += "  • Discount (" + pct(breakdownInitial.discountPercent) + "): - " + fmt(breakdownInitial.discountAmount) + "\n";
+      text += "Initial Purchase Cost: " + fmt(breakdownInitial.finalPrice) + "\n\n";
+      
+      text += "=== ADDITIONAL PURCHASE (Co-Term) ===\n";
+      text += "Additional Licenses Purchased: " + additionalLicenses + "\n";
+      text += "  • Cost before discount: " + fmt(additionalCostObj.costWithoutBase) + "\n";
+      text += "  • Discount (" + pct(additionalCostObj.discountRate) + "): - " + fmt(additionalCostObj.discountAmount) + "\n";
+      text += "  • Full-Year Cost after discount: " + fmt(additionalCostObj.fullYearCost) + "\n";
+      text += "Prorated for " + monthsRemaining + " month(s): " + fmt(additionalPurchaseCost) + "\n\n";
+      
+      text += "=== RENEWAL (Full Year for " + breakdownTotal.totalLicenses + " licenses) ===\n";
+      text += "Renewal Cost (using discount tier for " + breakdownTotal.totalLicenses + " licenses): " + fmt(renewalCostDue) + "\n\n";
+      
+      text += "=== SUMMARY ===\n";
+      text += "Total cost paid in current term: " + fmt(breakdownInitial.finalPrice + additionalPurchaseCost) + "\n";
+      
+      document.getElementById("breakdown").value = text;
+    }
+    
+    // Increment/Decrement functions for Initial Licenses
+    function incrementInitial() {
+      let input = document.getElementById("initialLicenses");
       input.value = parseInt(input.value) + 1;
-      calculatePrice();
+      calculateAll();
     }
-    
-    function decrement() {
-      let input = document.getElementById("licenses");
+    function decrementInitial() {
+      let input = document.getElementById("initialLicenses");
       let current = parseInt(input.value);
       if (current > parseInt(input.min)) {
         input.value = current - 1;
-        calculatePrice();
+        calculateAll();
       }
     }
     
-    // Initialize the calculator on page load
-    window.onload = calculatePrice;
+    // Increment/Decrement functions for Additional Licenses
+    function incrementAdditional() {
+      let input = document.getElementById("additionalLicenses");
+      input.value = parseInt(input.value) + 1;
+      calculateAll();
+    }
+    function decrementAdditional() {
+      let input = document.getElementById("additionalLicenses");
+      let current = parseInt(input.value);
+      if (current > parseInt(input.min)) {
+        input.value = current - 1;
+        calculateAll();
+      }
+    }
+    
+    // Initialize on page load
+    window.onload = calculateAll;
   </script>
 </body>
 </html>
