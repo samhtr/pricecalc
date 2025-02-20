@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>License Price Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background-color: #f9f9f9;
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      text-align: center;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .license-control {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+    }
+    .license-control button {
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0 10px;
+    }
+    .license-control button:hover {
+      background-color: #0056b3;
+    }
+    .license-control input {
+      width: 60px;
+      padding: 8px;
+      text-align: center;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 10px;
+      background: #e9ecef;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    textarea {
+      width: 100%;
+      margin-top: 10px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: none;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Price Calculator</h1>
+    <label for="licenses">Number of Licenses:</label>
+    <div class="license-control">
+      <button onclick="decrement()">−</button>
+      <input type="number" id="licenses" min="2" value="2" oninput="calculatePrice()">
+      <button onclick="increment()">+</button>
+    </div>
+    <div class="result" id="result">Total Price: $5000.00</div>
+    <label for="breakdown">Cost Breakdown:</label>
+    <textarea id="breakdown" rows="10" readonly></textarea>
+  </div>
+
+  <script>
+    function calculatePrice() {
+      // Get the current number of licenses
+      let numLicenses = parseInt(document.getElementById("licenses").value);
+      if (isNaN(numLicenses) || numLicenses < 2) {
+        document.getElementById("result").innerHTML = "Please enter a valid number (minimum 2 licenses).";
+        document.getElementById("breakdown").value = "";
+        return;
+      }
+      
+      const basePrice = 5000;  // Base package includes 2 licenses
+      let breakdownText = "";
+      breakdownText += "Base Package (2 licenses): $5000\n";
+      
+      // Calculate additional licenses beyond the included 2
+      let extraLicenses = numLicenses - 2;
+      breakdownText += "Additional Licenses: " + extraLicenses + "\n";
+      
+      // Pricing: Every 3 additional licenses cost $2500, remaining licenses are $1000 each
+      let groupCount = Math.floor(extraLicenses / 3);
+      let remainder = extraLicenses % 3;
+      let costGroups = groupCount * 2500;
+      let costRemainder = remainder * 1000;
+      
+      breakdownText += " - Groups of 3 (" + groupCount + " group(s)): $" + costGroups + "\n";
+      breakdownText += " - Remaining licenses (" + remainder + "): $" + costRemainder + "\n";
+      
+      let additionalCost = costGroups + costRemainder;
+      let subtotal = basePrice + additionalCost;
+      breakdownText += "Subtotal before discount: $" + subtotal + "\n";
+      
+      // Determine bulk discount percentage based on total licenses
+      let discountPercent = 0;
+      if (numLicenses >= 20 && numLicenses <= 39) {
+        discountPercent = 10;
+      } else if (numLicenses >= 40 && numLicenses <= 59) {
+        discountPercent = 15;
+      } else if (numLicenses >= 60 && numLicenses <= 99) {
+        discountPercent = 20;
+      } else if (numLicenses >= 100) {
+        discountPercent = 25;
+      }
+      
+      let discountAmount = (discountPercent / 100) * subtotal;
+      if (discountPercent > 0) {
+        breakdownText += "Bulk Discount (" + discountPercent + "%): -$" + discountAmount.toFixed(2) + "\n";
+      } else {
+        breakdownText += "Bulk Discount: None\n";
+      }
+      
+      let finalPrice = subtotal - discountAmount;
+      breakdownText += "Final Price: $" + finalPrice.toFixed(2);
+      
+      // Update displayed results
+      let formattedPrice = finalPrice.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+      document.getElementById("result").innerHTML = "Total Price: " + formattedPrice;
+      document.getElementById("breakdown").value = breakdownText;
+    }
+    
+    function increment() {
+      let input = document.getElementById("licenses");
+      input.value = parseInt(input.value) + 1;
+      calculatePrice();
+    }
+    
+    function decrement() {
+      let input = document.getElementById("licenses");
+      let current = parseInt(input.value);
+      if (current > parseInt(input.min)) {
+        input.value = current - 1;
+        calculatePrice();
+      }
+    }
+    
+    // Initialize the calculator on page load
+    window.onload = calculatePrice;
+  </script>
+</body>
+</html>
