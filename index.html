@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>License Price Calculator – Co-Term Additional Purchase with Discounts</title>
+  <title>License Price Calculator – Virtual & Hardware with Shipping</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -11,7 +11,7 @@
       background-color: #f9f9f9;
     }
     .container {
-      max-width: 900px;
+      max-width: 950px;
       margin: 0 auto;
       background: #fff;
       padding: 20px;
@@ -32,6 +32,12 @@
     }
     .section {
       margin-bottom: 30px;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    .section h3 {
+      margin-top: 0;
     }
     label {
       display: block;
@@ -42,18 +48,18 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 15px;
+      margin-bottom: 10px;
     }
     .license-control button {
-      width: 40px;
-      height: 40px;
-      font-size: 20px;
+      width: 35px;
+      height: 35px;
+      font-size: 18px;
       background-color: #007bff;
       color: white;
       border: none;
       border-radius: 4px;
       cursor: pointer;
-      margin: 0 10px;
+      margin: 0 5px;
     }
     .license-control button:hover {
       background-color: #0056b3;
@@ -88,25 +94,38 @@
     <div class="flex-container">
       <!-- Left Panel: Calculator Inputs -->
       <div class="calculator-panel">
-        <!-- Initial Purchase Section -->
+        <!-- INITIAL PURCHASE SECTION -->
         <div class="section">
           <h2>Initial Purchase (Full Year)</h2>
-          <label for="initialLicenses">Initial Licenses (min 2):</label>
+          <h3>Virtual Licenses</h3>
           <div class="license-control">
-            <button onclick="decrementInitial()">−</button>
-            <input type="number" id="initialLicenses" min="2" value="2" oninput="calculateAll()" />
-            <button onclick="incrementInitial()">+</button>
+            <button onclick="decrement('initialVirtual')">−</button>
+            <input type="number" id="initialVirtual" min="0" value="2" oninput="calculateAll()" />
+            <button onclick="increment('initialVirtual')">+</button>
           </div>
+          <h3>Hardware Licenses</h3>
+          <div class="license-control">
+            <button onclick="decrement('initialHardware')">−</button>
+            <input type="number" id="initialHardware" min="0" value="3" oninput="calculateAll()" />
+            <button onclick="increment('initialHardware')">+</button>
+          </div>
+          <small>Total initial licenses must be at least 2. (Current: Virtual + Hardware)</small>
         </div>
         
-        <!-- Additional Purchase Section -->
+        <!-- ADDITIONAL PURCHASE SECTION -->
         <div class="section">
           <h2>Additional Purchase (Co-Term)</h2>
-          <label for="additionalLicenses">Additional Licenses:</label>
+          <h3>Virtual Licenses</h3>
           <div class="license-control">
-            <button onclick="decrementAdditional()">−</button>
-            <input type="number" id="additionalLicenses" min="0" value="0" oninput="calculateAll()" />
-            <button onclick="incrementAdditional()">+</button>
+            <button onclick="decrement('additionalVirtual')">−</button>
+            <input type="number" id="additionalVirtual" min="0" value="0" oninput="calculateAll()" />
+            <button onclick="increment('additionalVirtual')">+</button>
+          </div>
+          <h3>Hardware Licenses</h3>
+          <div class="license-control">
+            <button onclick="decrement('additionalHardware')">−</button>
+            <input type="number" id="additionalHardware" min="0" value="0" oninput="calculateAll()" />
+            <button onclick="increment('additionalHardware')">+</button>
           </div>
           <label for="monthsRemaining">
             Months remaining until renewal for additional purchase:
@@ -118,25 +137,41 @@
         </div>
       </div>
       
-      <!-- Right Panel: Cost Breakdown -->
+      <!-- RIGHT PANEL: Cost Breakdown -->
       <div class="breakdown-panel">
         <h2>Cost Breakdown</h2>
-        <textarea id="breakdown" rows="25" readonly></textarea>
+        <textarea id="breakdown" rows="37" readonly></textarea>
       </div>
     </div>
   </div>
   
   <script>
-    // Computes full annual cost details for a given number of licenses (includes the base package).
+    // Increment/Decrement helper using id string.
+    function increment(id) {
+      let input = document.getElementById(id);
+      input.value = parseInt(input.value) + 1;
+      calculateAll();
+    }
+    function decrement(id) {
+      let input = document.getElementById(id);
+      let current = parseInt(input.value);
+      if (current > parseInt(input.min)) {
+        input.value = current - 1;
+        calculateAll();
+      }
+    }
+    
+    // Computes the full annual cost for a given total number of licenses.
+    // This includes the base package ($5000 for the first 2 licenses),
+    // group pricing (3 for $2500 vs. individual $1000) and bulk discount.
     function computeCostBreakdown(totalLicenses) {
-      const basePrice = 5000; // Price for first 2 licenses
+      const basePrice = 5000;
       let extraLicenses = totalLicenses - 2;
       let groupCount = Math.floor(extraLicenses / 3);
       let remainder = extraLicenses % 3;
       let additionalCost = groupCount * 2500 + remainder * 1000;
       let subtotal = basePrice + additionalCost;
       
-      // Determine discount percentage based on total licenses
       let discountPercent = 0;
       if (totalLicenses >= 20 && totalLicenses <= 39) {
         discountPercent = 0.10;
@@ -165,15 +200,15 @@
       };
     }
     
-    // Computes full-year cost for additional licenses as a standalone purchase (no base package).
-    // Returns detailed pricing including discount.
+    // Computes the full-year cost for additional licenses (standalone, no base package)
+    // using group pricing and discount tier determined by the combined total.
     function computeAdditionalCost(nAdditional, totalLicenses) {
       let discountRate = 0;
-      if(totalLicenses >= 20 && totalLicenses <= 39) {
+      if(totalLicenses >= 20 && totalLicenses <=39) {
         discountRate = 0.10;
-      } else if(totalLicenses >= 40 && totalLicenses <= 59) {
+      } else if(totalLicenses >= 40 && totalLicenses <=59) {
         discountRate = 0.15;
-      } else if(totalLicenses >= 60 && totalLicenses <= 99) {
+      } else if(totalLicenses >= 60 && totalLicenses <=99) {
         discountRate = 0.20;
       } else if(totalLicenses >= 100) {
         discountRate = 0.25;
@@ -194,104 +229,98 @@
     }
     
     function calculateAll() {
-      // Retrieve initial licenses (minimum 2)
-      let initialLicenses = parseInt(document.getElementById("initialLicenses").value) || 2;
-      if (initialLicenses < 2) initialLicenses = 2;
-      document.getElementById("initialLicenses").value = initialLicenses;
+      // Retrieve initial purchase inputs.
+      let initialVirtual = parseInt(document.getElementById("initialVirtual").value) || 0;
+      let initialHardware = parseInt(document.getElementById("initialHardware").value) || 0;
+      if ((initialVirtual + initialHardware) < 2) {
+        // Enforce a minimum of 2 initial licenses.
+        initialVirtual = 2;
+        document.getElementById("initialVirtual").value = initialVirtual;
+      }
+      let initialLicenses = initialVirtual + initialHardware;
       
-      // Retrieve additional licenses (0 or more)
-      let additionalLicenses = parseInt(document.getElementById("additionalLicenses").value) || 0;
-      if (additionalLicenses < 0) additionalLicenses = 0;
-      document.getElementById("additionalLicenses").value = additionalLicenses;
+      // Retrieve additional purchase inputs.
+      let additionalVirtual = parseInt(document.getElementById("additionalVirtual").value) || 0;
+      let additionalHardware = parseInt(document.getElementById("additionalHardware").value) || 0;
+      let additionalLicenses = additionalVirtual + additionalHardware;
       
-      // Retrieve months remaining for additional purchase
+      // Retrieve months remaining for additional purchase.
       let monthsRemaining = parseInt(document.getElementById("monthsRemaining").value) || 6;
       if (monthsRemaining < 1 || monthsRemaining > 12) {
         monthsRemaining = 6;
         document.getElementById("monthsRemaining").value = 6;
       }
       
-      // Total licenses after additional purchase
+      // Total licenses across both purchases.
       let totalLicenses = initialLicenses + additionalLicenses;
       
-      // Compute full-year cost breakdown for initial purchase (includes base)
+      // Compute license cost breakdowns.
       let breakdownInitial = computeCostBreakdown(initialLicenses);
-      
-      // Compute full-year cost breakdown for total licenses (for renewal)
       let breakdownTotal = computeCostBreakdown(totalLicenses);
       
-      // Compute additional purchase cost details (standalone, no base)
+      // Compute additional purchase cost (standalone, for the additional licenses).
       let additionalCostObj = computeAdditionalCost(additionalLicenses, totalLicenses);
       
-      // Co-term additional purchase cost: prorate the additional full-year cost over the months remaining.
-      let additionalPurchaseCost = additionalCostObj.fullYearCost * (monthsRemaining / 12);
+      // Prorate the additional license cost by the months remaining.
+      let additionalLicenseCostProrated = additionalCostObj.fullYearCost * (monthsRemaining / 12);
       
-      // Renewal cost is the full annual cost for the total licenses (no credit adjustment).
+      // Compute shipping costs:
+      // Shipping is applied only to hardware licenses at purchase (flat rate per up-to-5 block).
+      let initialShipping = 100 * Math.ceil(initialHardware / 5);
+      let additionalShipping = 100 * Math.ceil(additionalHardware / 5);
+      
+      // Total cost for each purchase.
+      let initialPurchaseTotal = breakdownInitial.finalPrice + initialShipping;
+      let additionalPurchaseTotal = additionalLicenseCostProrated + additionalShipping;
+      
+      // Renewal cost is computed on the full-year cost for the combined total (no shipping).
       let renewalCostDue = breakdownTotal.finalPrice;
       
-      // Formatting helpers
+      // Formatting helpers.
       const fmt = (num) => num.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
       const pct = (n) => (n * 100).toFixed(0) + "%";
       
-      // Build breakdown text
+      // Build the detailed breakdown text.
       let text = "";
       text += "=== INITIAL PURCHASE (Full Year) ===\n";
-      text += "Initial Licenses: " + breakdownInitial.totalLicenses + "\n";
+      text += "Initial Virtual Licenses: " + initialVirtual + "\n";
+      text += "Initial Hardware Licenses: " + initialHardware + "\n";
+      text += "Total Initial Licenses: " + initialLicenses + "\n";
       text += "  • Base Price (2 licenses): " + fmt(breakdownInitial.basePrice) + "\n";
       text += "  • Additional Licenses: " + breakdownInitial.extraLicenses + "\n";
       text += "     - " + breakdownInitial.groupCount + " group(s) of 3 @ " + fmt(2500) + "\n";
       text += "     - " + breakdownInitial.remainder + " license(s) @ " + fmt(1000) + "\n";
       text += "  • Subtotal: " + fmt(breakdownInitial.subtotal) + "\n";
       text += "  • Discount (" + pct(breakdownInitial.discountPercent) + "): - " + fmt(breakdownInitial.discountAmount) + "\n";
-      text += "Initial Purchase Cost: " + fmt(breakdownInitial.finalPrice) + "\n\n";
+      text += "License Cost: " + fmt(breakdownInitial.finalPrice) + "\n";
+      text += "Shipping (for " + initialHardware + " hardware licenses): " + fmt(initialShipping) + "\n";
+      text += "Initial Purchase Total: " + fmt(initialPurchaseTotal) + "\n\n";
       
       text += "=== ADDITIONAL PURCHASE (Co-Term) ===\n";
-      text += "Additional Licenses Purchased: " + additionalLicenses + "\n";
+      text += "Additional Virtual Licenses: " + additionalVirtual + "\n";
+      text += "Additional Hardware Licenses: " + additionalHardware + "\n";
+      text += "Total Additional Licenses: " + additionalLicenses + "\n";
       text += "  • Cost before discount: " + fmt(additionalCostObj.costWithoutBase) + "\n";
       text += "  • Discount (" + pct(additionalCostObj.discountRate) + "): - " + fmt(additionalCostObj.discountAmount) + "\n";
       text += "  • Full-Year Cost after discount: " + fmt(additionalCostObj.fullYearCost) + "\n";
-      text += "Prorated for " + monthsRemaining + " month(s): " + fmt(additionalPurchaseCost) + "\n\n";
+      text += "Prorated for " + monthsRemaining + " month(s): " + fmt(additionalLicenseCostProrated) + "\n";
+      text += "Shipping (for " + additionalHardware + " hardware licenses): " + fmt(additionalShipping) + "\n";
+      text += "Additional Purchase Total: " + fmt(additionalPurchaseTotal) + "\n\n";
       
       text += "=== RENEWAL (Full Year for " + breakdownTotal.totalLicenses + " licenses) ===\n";
-      text += "Renewal Cost (using discount tier for " + breakdownTotal.totalLicenses + " licenses): " + fmt(renewalCostDue) + "\n\n";
+      text += "Renewal Cost (license cost with discount, no shipping): " + fmt(renewalCostDue) + "\n\n";
       
       text += "=== SUMMARY ===\n";
-      text += "Total cost paid in current term: " + fmt(breakdownInitial.finalPrice + additionalPurchaseCost) + "\n";
+      text += "Total Cost Paid in Current Term:\n";
+      text += "  Initial Purchase: " + fmt(initialPurchaseTotal) + "\n";
+      text += "  Additional Purchase: " + fmt(additionalPurchaseTotal) + "\n";
+      text += "  ------------------------------\n";
+      text += "  Total: " + fmt(initialPurchaseTotal + additionalPurchaseTotal) + "\n";
       
       document.getElementById("breakdown").value = text;
     }
     
-    // Increment/Decrement functions for Initial Licenses
-    function incrementInitial() {
-      let input = document.getElementById("initialLicenses");
-      input.value = parseInt(input.value) + 1;
-      calculateAll();
-    }
-    function decrementInitial() {
-      let input = document.getElementById("initialLicenses");
-      let current = parseInt(input.value);
-      if (current > parseInt(input.min)) {
-        input.value = current - 1;
-        calculateAll();
-      }
-    }
-    
-    // Increment/Decrement functions for Additional Licenses
-    function incrementAdditional() {
-      let input = document.getElementById("additionalLicenses");
-      input.value = parseInt(input.value) + 1;
-      calculateAll();
-    }
-    function decrementAdditional() {
-      let input = document.getElementById("additionalLicenses");
-      let current = parseInt(input.value);
-      if (current > parseInt(input.min)) {
-        input.value = current - 1;
-        calculateAll();
-      }
-    }
-    
-    // Initialize on page load
+    // Initialize on page load.
     window.onload = calculateAll;
   </script>
 </body>
